@@ -227,7 +227,8 @@
                                   | mpls_bos
                                   | pbb_isid
                                   | tunnel_id
-                                  | ipv6_exthdr.
+                                  | ipv6_exthdr
+                                  | tcp_flags.
 
 -type fields()                   :: [field_name()].
 -type field_value()              :: atom()

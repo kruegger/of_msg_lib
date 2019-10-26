@@ -112,7 +112,8 @@
          odu_sigtype/1,
          odu_sigid/1,
          och_sigtype/1,
-         och_sigid/1
+         och_sigid/1,
+         tcp_flags/1
         ]).
 
 -include_lib("of_protocol/include/of_protocol.hrl").
@@ -613,34 +614,34 @@ mk_match({Field,Val,Mask}, Acc) ->
 
 add_required_fields(Field, Acc) ->
     case required(Field) of
-	{F,V} ->
-	    case has_match(F,V,Acc) of
+        {F,V} ->
+            case has_match(F,V,Acc) of
                 % XXX unhandled case 'other'
-		missing ->
-		    [?MODULE:F(V)|add_required_fields(F, Acc)];
-		present ->
-		    Acc
-	    end;
-	[{F1,V1},{F2,V2}]=M ->
-	    case (has_match(F1,V1,Acc)==present) or (has_match(F2,V2,Acc)==present) of
-		true ->
-		    Acc;
-		false ->
-		    throw({missing_match,M,Field,Acc})
-	    end;
-	none ->
-	    Acc
+                missing ->
+                    [?MODULE:F(V)|add_required_fields(F, Acc)];
+                present ->
+                    Acc
+            end;
+        [{F1,V1},{F2,V2}]=M ->
+            case (has_match(F1,V1,Acc)==present) or (has_match(F2,V2,Acc)==present) of
+                true ->
+                    Acc;
+                false ->
+                    throw({missing_match,M,Field,Acc})
+            end;
+        none ->
+            Acc
     end.
 
 
 has_match(Field, Val, Acc) ->
     case lists:keyfind(Field, #ofp_field.name, Acc) of
-	#ofp_field{value=Val} ->
-	    present;
-	#ofp_field{} ->
-	    other;
-	false ->
-	    missing
+        #ofp_field{value=Val} ->
+            present;
+        #ofp_field{} ->
+            other;
+        false ->
+            missing
     end.
 
 required(in_phy_port) ->
@@ -710,6 +711,8 @@ required(pbb_isid) ->
     {eth_type,<<16#88E7:16>>};
 required(ipv6_exthdr) ->
     {eth_type,<<16#86dd:16>>};
+required(tcp_flags) ->
+    {ip_proto,<<6:8>>};
 required(_) ->
     none.
 
@@ -726,7 +729,7 @@ in_port(Val) when is_integer(Val) ->
     in_port(<<Val:32>>);
 in_port(Val) when byte_size(Val) == 4 ->
     #ofp_field{name = in_port,
-	       value = Val}.
+               value = Val}.
 
 in_phy_port(Val) when is_integer(Val) ->
     in_phy_port(<<Val:32>>);
@@ -998,6 +1001,10 @@ ipv6_exthdr(Val, Mask) when bit_size(Val) == 9, bit_size(Mask) == 9 ->
                has_mask = true,
                mask = Mask}.
 
+tcp_flags(Val) when byte_size(Val) == 2 ->
+    #ofp_field{name = tcp_flags,
+               value = Val}.
+
 odu_sigtype(Value) ->
     #ofp_field{
        class = infoblox,
@@ -1070,7 +1077,7 @@ mk_actions(As) ->
 
 mk_action({output, Port, MaxLen}) ->
     #ofp_action_output{port = Port,
-		       max_len = MaxLen};
+                       max_len = MaxLen};
 
 mk_action({group, Group}) ->
     #ofp_action_group{group_id = Group};
