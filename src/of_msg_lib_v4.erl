@@ -113,11 +113,13 @@
          odu_sigid/1,
          och_sigtype/1,
          och_sigid/1,
-         tcp_flags/1
+         tcp_flags/1,
+         tcp_flags/2
         ]).
 
 -include_lib("of_protocol/include/of_protocol.hrl").
 -include_lib("of_protocol/include/ofp_v4.hrl").
+-include_lib("of_protocol/include/ofp_logger.hrl").
 
 %% error message
 create_error(Type, Code) ->
@@ -1004,6 +1006,11 @@ ipv6_exthdr(Val, Mask) when bit_size(Val) == 9, bit_size(Mask) == 9 ->
 tcp_flags(Val) when byte_size(Val) == 2 ->
     #ofp_field{name = tcp_flags,
                value = Val}.
+tcp_flags(Val, Mask) when byte_size(Val) == 2, byte_size(Mask) == 2 ->
+    #ofp_field{name = tcp_flags,
+               value = Val,
+               has_mask = true,
+               mask = Mask}.
 
 odu_sigtype(Value) ->
     #ofp_field{
